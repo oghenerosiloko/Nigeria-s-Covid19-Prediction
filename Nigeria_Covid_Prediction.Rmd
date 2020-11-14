@@ -10,7 +10,7 @@ output:
   html_document: default
 ---
 This is my first R Project, i want to use the knowledge of Time Series Analysis to Evaluate
-and forcast the rate of covid-19 cases in Nigeria by the end of december 2020 using the
+and forecast the rate of covid-19 cases in Nigeria by the end of december 2020 using the
 Prophet Packages in R. 
 My data was pulled from https://ourworldindata.org/coronavirus-source-data
 The data on the coronavirus pandemic is updated daily. Last update: November 3, 2020 (10:30, London time).
