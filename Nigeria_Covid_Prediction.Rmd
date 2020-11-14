@@ -1,0 +1,148 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+---
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+This is my first R Project, i want to use the knowledge of Time Series Analysis to Evaluate
+and forcast the rate of covid-19 cases in Nigeria by the end of december 2020 using the
+Prophet Packages in R. 
+My data was pulled from https://ourworldindata.org/coronavirus-source-data
+The data on the coronavirus pandemic is updated daily. Last update: November 3, 2020 (10:30, London time).
+
+Reading the data file from my document into Covid19 variable
+```{r}
+covid19<- read.csv(file.choose())
+```
+lets check out the data set
+```{r}
+head(covid19, 10)
+```
+
+I want to try and get the column names
+```{r}
+colnames(covid19)
+```
+I will get rid off the unwanted columns
+```{r}
+covid19 <- covid19[ -c(6:49) ]
+head(covid19,10)
+```
+I want to filter the data to get only cases related to Nigeria
+```{r}
+covidnaija<- covid19[covid19$location=="Nigeria", ]
+head(covidnaija, 16)
+```
+```{r}
+tail(covidnaija, 10)
+```
+
+i want to further remove the column on continent and iso-code, its not needed in my analysis
+```{r}
+covidnaija<-covidnaija[-c(1:2)]
+head(covidnaija)
+```
+I want to back up filtered data so far in case
+```{r}
+covid_backup<-covidnaija
+```
+I want further check for missing data and NA data fields
+```{r}
+covidnaija[is.na(covidnaija$total_cases), ]
+```
+i have 70 rows of missing data most probably early days when corona virus cases was not recorded
+I want to filter out these missing columns for my analysis.
+```{r}
+covidnaija<-covidnaija[!is.na(covidnaija$total_cases), ]
+head(covidnaija)
+
+```
+```{r}
+tail(covidnaija)
+```
+i want to check for missing data again
+```{r}
+covidnaija[is.na(covidnaija), ]
+```
+Great! no more missing data and columns
+I want to reformat the indexing in the colunmns
+```{r}
+rownames(covidnaija)<-NULL
+head(covidnaija)
+```
+Data is nice and clean and read to be used for forcasting.
+For the Time series analysis, i will make use of a couple of libraries such as prophet, ggplot2, libridate etc.
+
+```{r}
+library("timeSeries")
+library("prophet")
+library("ggplot2")
+library("lubridate")
+library("forecast")
+```
+we need to format the date column into date format in R
+```{r}
+covidnaija$date<-ymd(covidnaija$date)
+str(covidnaija)
+```
+Visualizing the The trend of Covid-19 cases in Nigeria
+```{r}
+qplot(data= covidnaija, date, total_cases,
+      main= "COVID-19 confirmed Cases in Nigeria for 2020")
+```
+
+Passing Date and Prediction Variable into ds and y
+```{r}
+ds<-covidnaija$date
+y<-covidnaija$total_cases
+```
+
+Creating a new data frame for the prediction vairables
+```{r}
+Newcovid<-data.frame(ds, y)
+```
+
+Passing the new data frame to Prophet for forecasting
+```{r}
+forcast1<-prophet(Newcovid)
+```
+Seasonality has been disabled for the above code because the data is not large enough to accomodate a whole season
+
+i want to now create a data set predicted for the next 60 days
+```{r}
+predictions1<- make_future_dataframe(forcast1, periods = 60)
+next60days<-predict(forcast1, predictions1)
+```
+
+Lets view the new future predictions 
+```{r}
+tail(next60days, 20)
+```
+So the new predicted data have predicted corona cases till 2nd of January 2021.
+From Estimated and predicted data, Nigeria's Confirmed Corona Cases by the end of the year would slightly about 70,000 cases.
+
+lets visualize this
+```{r}
+plot(forcast1, next60days)
+
+```
+
+
+```{r}
+prophet_plot_components(forcast1, next60days)
+```
+The above code shows there are usually higher cases of Covid-19 cases in Nigeria during weekends starting from friday to sundays with Wednesdays having the lowest days of confirmed cases.
+The high spike in Sundays and Saturdays could be attributed to people having to gather more in public places like market, churches or mosques, recreational centers e.t.c.
+
+```{r}
+predicted_values<-next60days$yhat[1:239]
+Actual_values<-forcast1$history$y
+plot(Actual_values, predicted_values)
+```
+
+
